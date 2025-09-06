@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioAura'25 - Biomedical Symposium</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        :root {
+            --primary: #006e3b;
+            --primary-light: #4c9c79;
+            --primary-dark: #004d29;
+            --secondary: #002425;
+            --accent: #000000;
+            --light: #e9f5f9;
+            --light-green: #f0f8f4;
+            --dark: #333333;
+            --success: #438879;
+            --warning: #ff9800;
+            
+            /* Light theme variables */
+            --bg-color: #f5f9f7;
+            --text-color: #333333;
+            --card-bg: white;
+            --section-bg: white;
+            --header-bg: linear-gradient(135deg, var(--primary), var(--secondary));
+            --footer-bg: var(--primary-dark);
+            --stat-bg: var(--light-green);
+            --event-header-bg: var(--primary);
+            --event-coordinator-bg: var(--light-green);
+            --input-bg: white;
+            --input-border: #ddd;
+            --tab-border: #ddd;
+        }
+
+        .dark-theme {
+            --bg-color: #1a2a2a;
+            --text-color: #e9f5f9;
+            --card-bg: #223333;
+            --section-bg: #223333;
+            --header-bg: linear-gradient(135deg, #004d29, #001515);
+            --footer-bg: #001515;
+            --stat-bg: #2d4444;
+            --event-header-bg: #004d29;
+            --event-coordinator-bg: #2d4444;
+            --input-bg: #2d4444;
+            --input-border: #4c9c79;
+            --tab-border: #4c9c79;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        header {
+            background: var(--header-bg);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 Z" fill="rgba(255,255,255,0.1)"/></svg>');
+            background-size: cover;
+        }
+        
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .tagline {
+            font-style: italic;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        .section {
+            background: var(--section-bg);
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s;
+        }
+        
+        .section-title {
+            color: var(--primary-light);
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 10px;
+            font-size: 1.5rem;
+        }
+        
+        .countdown {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .countdown-box {
+            background: var(--primary);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 80px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .countdown-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            line-height: 1;
+        }
+        
+        .countdown-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        
+        .stat-box {
+            background: var(--stat-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            flex: 1;
+            min-width: 200px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            transition: background-color 0.3s;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+        
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .event-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .event-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+        
+        .event-header {
+            background: var(--event-header-bg);
+            color: white;
+            padding: 1rem;
+        }
+        
+        .event-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 0.3rem;
+        }
+        
+        .event-type {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .event-body {
+            padding: 1.5rem;
+        }
+        
+        .event-theme {
+            color: var(--accent);
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        
+        .event-details {
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+        
+        .event-details i {
+            color: var(--primary);
+            margin-right: 8px;
+            width: 20px;
+        }
+        
+        .event-coordinators {
+            background: var(--event-coordinator-bg);
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+        
+        .coordinators-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: var(--primary-dark);
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--tab-border);
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 0.8rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            border-bottom: 3px solid var(--primary);
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .team-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            transition: transform 0.3s ease, background-color 0.3s;
+        }
+        
+        .team-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .team-name {
+            font-weight: bold;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .team-role {
+            color: var(--primary);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        
+        .team-members {
+            font-size: 0.95rem;
+        }
+        
+        .map-container {
+            height: 300px;
+            background: #eee;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 1.5rem;
+        }
+        
+        .btn-register {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: 2px solid var(--primary);
+            margin-top: 1rem;
+            cursor: pointer;
+        }
+        
+        .btn-register:hover {
+            background: transparent;
+            color: var(--primary);
+        }
+        
+        footer {
+            background: var(--footer-bg);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            margin-top: 3rem;
+            transition: background-color 0.3s;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        .college-name {
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .social-link {
+            color: white;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+        }
+        
+        .social-link:hover {
+            color: var(--light-green);
+            transform: translateY(-3px);
+        }
+        
+        .social-text {
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+        
+        .contact-info {
+            margin: 1rem 0;
+            line-height: 1.8;
+        }
+        
+        .chatbot-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+        
+        .chatbot-container {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 350px;
+            height: 450px;
+            background: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+            overflow: hidden;
+            transition: background-color 0.3s;
+        }
+        
+        .chatbot-header {
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .chatbot-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .message {
+            padding: 0.8rem;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+        
+        .bot-message {
+            background: var(--stat-bg);
+            align-self: flex-start;
+        }
+        
+        .user-message {
+            background: var(--primary-light);
+            color: white;
+            align-self: flex-end;
+        }
+        
+        .chatbot-input {
+            display: flex;
+            padding: 0.5rem;
+            border-top: 1px solid var(--tab-border);
+        }
+        
+        .chatbot-input input {
+            flex: 1;
+            padding: 0.8rem;
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            margin-right: 0.5rem;
+            background: var(--input-bg);
+            color: var(--text-color);
+        }
+        
+        .chatbot-input button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .close-modal {
+            float: right;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            background: var(--input-bg);
+            color: var(--text-color);
+        }
+        
+        .form-group-checkbox {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-right: 1rem;
+        }
+        
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1.5rem;
+            transition: background 0.3s;
+            z-index: 10;
+        }
+        
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .events-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .countdown-box {
+                min-width: 60px;
+                padding: 1rem;
+            }
+            
+            .countdown-value {
+                font-size: 2rem;
+            }
+            
+            .stats {
+                flex-direction: column;
+            }
+            
+            .chatbot-container {
+                width: 90%;
+                right: 5%;
+            }
+            
+            .theme-toggle {
+                top: 10px;
+                right: 10px;
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+            
+            .social-links {
+                gap: 1rem;
+            }
+            
+            .social-link {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">BioAura'25</div>
+        <div class="tagline">Biomedical Symposium - Kings Engineering College</div>
+        <button class="theme-toggle" id="theme-toggle">
+            <i class="fas fa-moon"></i>
+        </button>
+    </header>
+
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title"><i class="fas fa-calendar-alt"></i> Symposium Countdown</h2>
+            <div class="countdown">
+                <div class="countdown-box">
+                    <div class="countdown-value" id="days">00</div>
+                    <div class="countdown-label">Days</div>
+                </div>
+                <div class="countdown-box">
+                    <div class="countdown-value" id="hours">00</div>
+                    <div class="countdown-label">Hours</div>
+                </div>
+                <div class="countdown-box">
+                    <div class="countdown-value" id="minutes">00</div>
+                    <div class="countdown-label">Minutes</div>
+                </div>
+                <div class="countdown-box">
+                    <div class="countdown-value" id="seconds">00</div>
+                    <div class="countdown-label">Seconds</div>
+                </div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-value">7</div>
+                    <div class="stat-label">Events</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">30+</div>
+                    <div class="stat-label">Coordinators</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">500+</div>
+                    <div class="stat-label">Expected Participants</div>
+                </div>
+            </div>
+            
+            <div style="text-align: center;">
+                <button class="btn-register" id="open-registration">Register Now</button>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title"><i class="fas fa-medkit"></i> Technical Events</h2>
+            <div class="events-grid">
+                <div class="event-card">
+                    <div class="event-header">
+                        <div class="event-name">Xenomedica</div>
+                        <div class="event-type">Paper & Poster Presentation</div>
+                    </div>
+                    <div class="event-body">
+                        <div class="event-theme">Futuristic medicine to heal</div>
+                        <div class="event-details">
+                            <div><i class="fas fa-map-marker-alt"></i> Main Auditorium</div>
+                            <div><i class="fas fa-clock"></i> 10:00 AM - 12:00 PM</div>
+                        </div>
+                        <div class="event-coordinators">
+                            <div class="coordinators-title">Coordinators:</div>
+                            <div>Jayachandran K, Poovarasi S</div>
+                            <b>Co-Coordinators:</b> <p>Madhana, Sabariganesh</p>
+                            
+                            
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="event-card">
+                    <div class="event-header">
+                        <div class="event-name">Medniche</div>
+                        <div class="event-type">Medical Project Innovation</div>
+                    </div>
+                    <div class="event-body">
+                        <div class="event-theme">Innovate, design & deliver unique medical projects</div>
+                        <div class="event-details">
+                            <div><i class="fas fa-map-marker-alt"></i> Innovation Lab</div>
+                            <div><i class="fas fa-clock"></i> 1:00 PM - 3:00 PM</div>
+                            
+                        </div>
+                        <div class="event-coordinators">
+                            <div class="coordinators-title">Coordinators:</div>
+                            <div>Carrol Marx Samuel M P, Hemamalini A</div>
+                            <b>Co-Coordinators:</b> <p>Will be announce</p>
+                            
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="event-card">
+                    <div class="event-header">
+                        <div class="event-name">Medmystery</div>
+                        <div class="event-type">Case Analysis</div>
+                    </div>
+                    <div class="event-body">
+                        <div class="event-theme">Analyze and decode medical cases</div>
+                        <div class="event-details">
+                            <div><i class="fas fa-map-marker-alt"></i> Conference Hall</div>
+                            <div><i class="fas fa-clock"></i> 11:00 AM - 1:00 PM</div>
+                            
+                        </div>
+                        <div class="event-coordinators">
+                            <div class="coordinators-title">Coordinators:</div>
+                            <div>Keerthana T, Manigandan C</div>
+                            <b>Co-Coordinators:</b>   <p>Will be announce</p> 
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title"><i class="fas fa-gamepad"></i> Non-Technical Events</h2>
+            <div class="events-grid">
+                <div class="event-card">
+                    <div class="event-header">
+                        <div class="event-name">Crafina</div>
+                        <div class="event-type">Craft Competition</div>
+                    </div>
+                    <div class="event-body">
+                        <div class="event-theme">Create perfect crafts with action guidance</div>
+                        <div class="event-details">
+                            <div><i class="fas fa-map-marker-alt"></i> Arts Room</div>
+                            <div><i class="fas fa-clock"></i> 10:30 AM - 12:30 PM</div>
+                           
+                        </div>
+                        <div class="event-coordinators">
+                            <div class="coordinators-title">Coordinators:</div>
+                            <div>Keerthika S, Nandhana S</div>
+                             <b>Co-Coordinators:</b>  <p>Will be announce</p>
+                           
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="event-card">
+                    <div class="event-header">
+                        <div class="event-name">Aura Connect</div>
+                        <div class="event-type">Clue Solving</div>
+                    </div>
+                    <div class="event-body">
+                        <div class="event-theme">Link the clues, Spark the aura</div>
+                        <div class="event-details">
+                            <div><i class="fas fa-map-marker-alt"></i> Lawn Area</div>
+                            <div><i class="fas fa-clock"></i> 2:00 PM - 4:00 PM</div>
+                           
+                        </div>
+                        <div class="event-coordinators">
+                            <div class="coordinators-title">Coordinators:</div>
+                            <div>Ruthira A, Sarathi A</div>
+                             <b>Co-Coordinators:</b>  <p>Will be announce</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="event-card">
+                    <div class="event-header">
+                        <div class="event-name">Mind Blasters</div>
+                        <div class="event-type">Puzzle Solving</div>
+                    </div>
+                    <div class="event-body">
+                        <div class="event-theme">Solve puzzles with your mind to win</div>
+                        <div class="event-details">
+                            <div><i class="fas fa-map-marker-alt"></i> Room 302</div>
+                            <div><i class="fas fa-clock"></i> 9:30 AM - 11:00 AM</div>
+                            
+                        </div>
+                        <div class="event-coordinators">
+                            <div class="coordinators-title">Coordinators:</div>
+                            <div>Aravind deva S, Deva Bharathi C</div>
+                              <b>Co-Coordinators:</b>  <p>Will be announce</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="event-card">
+                    <div class="event-header">
+                        <div class="event-name">Surprise Event</div>
+                        <div class="event-type">Mystery Event</div>
+                    </div>
+                    <div class="event-body">
+                        <div class="event-theme">A surprise challenge for participants</div>
+                        <div class="event-details">
+                            <div><i class="fas fa-map-marker-alt"></i> To be announced</div>
+                            <div><i class="fas fa-clock"></i> 4:00 PM - 5:00 PM</div>
+                           
+                        </div>
+                        <div class="event-coordinators">
+                            <div class="coordinators-title">Coordinators:</div>
+                            <div>Aswin K, Benny Joshua K</div>
+                              <b>Co-Coordinators:</b>  <p>Will be announce</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title"><i class="fas fa-users"></i> Our Team</h2>
+            <div class="tabs">
+                <div class="tab active" data-tab="faculty">Faculty</div>
+                <div class="tab" data-tab="student-coordinators">Student Coordinators</div>
+                <div class="tab" data-tab="organizers">Organizers</div>
+                <div class="tab" data-tab="teams">Team Coordinators</div>
+            </div>
+            
+            <div id="faculty" class="tab-content active">
+                <div class="team-grid">
+                    <div class="team-card">
+                        <div class="team-name">Mrs. Lekha sri</div>
+                        <div class="team-role">Head of the Department</div>
+                    </div>
+                    <div class="team-card">
+                        <div class="team-name">Mr. Muthukumaraswamy</div>
+                        <div class="team-role">Staff Coordinator</div>
+                    </div>
+                    <div class="team-card">
+                        <div class="team-name">Mrs. Saranya</div>
+                        <div class="team-role">Staff Organizer</div>
+                    </div>
+                    <div class="team-card">
+                        <div class="team-name">Mrs. Maria Celestina</div>
+                        <div class="team-role">Staff Organizer</div>
+                    </div>
+                    <div class="team-card">
+                        <div class="team-name">Mr. Ramachandhiran</div>
+                        <div class="team-role">Staff Organizer</div>
+                    </div>
+                    <div class="team-card">
+                        <div class="team-name">Mr. Prakash</div>
+                        <div class="team-role">Staff Organizer</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="student-coordinators" class="tab-content">
+                <div class="team-grid">
+                    <div class="team-card">
+                        <div class="team-name">Manoj V</div>
+                        <div class="team-role">Student Coordinator</div>
+                    </div>
+                    <div class="team-card">
+                        <div class="team-name">Meenadeepika B</div>
+                        <div class="team-role">Student Coordinator</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="organizers" class="tab-content">
+                <div class="team-grid">
+                    <div class="team-card">
+                        <div class="team-name">Aswin K</div>
+                        <div class="team-role">Organizer</div>
+                    </div>
+                    <div class="team-card">
+                        <div class="team-name">Avinash P V</div>
+                        <div class="team-role">Organizer</div>
+                    </div>
+                    <div class="team-card">
+                        <div class="team-name">Santhosh kumar S</div>
+                        <div class="team-role">Organizer</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="teams" class="tab-content">
+                <div class="team-grid">
+                    <div class="team-card">
+                        <div class="team-name">Registration Team</div>
+                        <div class="team-members">Harshavardhini A, Vinish D</div>
+                    </div>
+                    <div class="team-card">
+                        <div class="team-name">Choir Team</div>
+                        <div class="team-members">Hena Paulin L</div>
+                    </div>
+                    <div class="team-card">
+                        <div class="team-name">Reception Team</div>
+                        <div class="team-members">Indrapriyadharshini M, Maria stephy T</div>
+                    </div>
+                    <div class="team-card">
+                        <div class="team-name">Decoration Team</div>
+                        <div class="team-members">Ignesh S, Pradeepa S</div>
+                    </div>
+                    <div class="team-card">
+                        <div class="team-name">Refreshment Team</div>
+                        <div class="team-members">Diyaa sri D R, Santhosh kumar S</div>
+                    </div>
+                      <div class="team-card">
+                        <div class="team-name">Anchoring Team</div>
+                        <div class="team-members">Priscilla K, Keerthika T</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title"><i class="fas fa-map-marked-alt"></i> Event Location</h2>
+            <p>The symposium will be held at Kings Engineering College, Biomedical Department.</p>
+            
+            <div class="map-container" id="map">
+                <!-- Map will be rendered here -->
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="college-name">Kings Engineering College</div>
+            <p>Biomedical Department Symposium 2025</p>
+            
+            <div class="social-links">
+                <a href="https://wa.me/917358878062" class="social-link" target="_blank">
+                    <i class="fab fa-whatsapp"></i>
+                    <span class="social-text">WhatsApp</span>
+                </a>
+                <a href="https://www.instagram.com/bioaura25/?utm_source=ig_web_button_share_sheet" class="social-link" target="_blank">
+                    <i class="fab fa-instagram"></i>
+                    <span class="social-text">Instagram</span>
+                </a>
+                <a href="https://www.facebook.com/SureshMagalingam" class="social-link" target="_blank">
+                    <i class="fab fa-facebook"></i>
+                    <span class="social-text">Facebook</span>
+                </a>
+                <a href="https://www.google.com/maps/place/Kings+Engineering+College/@12.901729,80.073257,17z/data=!3m1!4b1!4m6!3m5!1s0x3a52f6cff1b9b16d:0x69d36f6a2b1b2b2b!8m2!3d12.901729!4d80.075832!16s%2Fg%2F11g9j4j4q4?entry=ttu" class="social-link" target="_blank">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span class="social-text">Location</span>
+                </a>
+                <a href="mailto:bioaura25@gmail.com" class="social-link">
+                    <i class="fas fa-envelope"></i>
+                    <span class="social-text">Email</span>
+                </a>
+                <a href="tel:+917358878062" class="social-link">
+                    <i class="fas fa-phone-alt"></i>
+                    <span class="social-text">Call</span>
+                </a>
+                 <a href="https://www.youtube.com/@bioaura25" class="social-link">
+                    <i class="fab fa-youtube"></i>
+                    <span class="social-text">Youtube</span>
+                </a>
+            </div>
+            
+        
+            
+            <p>This site was created by the Department of Biomedical Engineering</p>
+            <p style="margin-top: 1rem;">© 2025 BioAura. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Registration Modal -->
+    <div class="modal" id="registration-modal">
+        <div class="modal-content">
+            <span class="close-modal" id="close-registration">&times;</span>
+            <h2 class="section-title"><i class="fas fa-user-plus"></i> Registration Form</h2>
+            
+            <form id="registration-form">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="college">College Name</label>
+                    <input type="text" id="college" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="department">Department</label>
+                    <input type="text" id="department" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="year">Year of Study</label>
+                    <select id="year" required>
+                        <option value="">Select Year</option>
+                        <option value="1">First Year</option>
+                        <option value="2">Second Year</option>
+                        <option value="3">Third Year</option>
+                        <option value="4">Fourth Year</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Select Events</label>
+                    <div class="form-group-checkbox">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="xenomedica" value="Xenomedica">
+                            <label for="xenomedica">Xenomedica</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="medniche" value="Medniche">
+                            <label for="medniche">Medniche</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="medmystery" value="Medmystery">
+                            <label for="medmystery">Medmystery</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="crafina" value="Crafina">
+                            <label for="crafina">Crafina</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="aura-connect" value="Aura Connect">
+                            <label for="aura-connect">Aura Connect</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="mind-blasters" value="Mind Blasters">
+                            <label for="mind-blasters">Mind Blasters</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="surprise-event" value="Surprise Event">
+                            <label for="surprise-event">Surprise Event</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-register">Submit Registration</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Chatbot Button -->
+    <div class="chatbot-btn" id="chatbot-toggle">
+        <i class="fas fa-robot"></i>
+    </div>
+
+    <!-- Chatbot Container -->
+    <div class="chatbot-container" id="chatbot">
+        <div class="chatbot-header">
+            BioAura'25 Chatbot
+        </div>
+        <div class="chatbot-messages" id="chatbot-messages">
+            <div class="message bot-message">
+                Hello! I'm the BioAura'25 chatbot. How can I help you today?
+            </div>
+        </div>
+        <div class="chatbot-input">
+            <input type="text" id="user-input" placeholder="Type your message...">
+            <button id="send-message"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = themeToggle.querySelector('i');
+        
+        // Check for saved theme preference or respect OS preference
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-theme');
+            themeIcon.classList.remove('fa-moon');
+            themeIcon.classList.add('fa-sun');
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-theme');
+            
+            if (document.body.classList.contains('dark-theme')) {
+                localStorage.setItem('theme', 'dark');
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            } else {
+                localStorage.setItem('theme', 'light');
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+            }
+        });
+        
+        // Countdown timer
+        function updateCountdown() {
+            const targetDate = new Date('2025-10-10T09:00:00'); // October 10, 2025
+            const now = new Date();
+            const diff = targetDate - now;
+            
+            if (diff <= 0) {
+                document.getElementById('days').textContent = '00';
+                document.getElementById('hours').textContent = '00';
+                document.getElementById('minutes').textContent = '00';
+                document.getElementById('seconds').textContent = '00';
+                return;
+            }
+            
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            document.getElementById('days').textContent = days.toString().padStart(2, '0');
+            document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+            document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+            document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+        }
+        
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+        
+        // Tab switching for team section
+        const tabs = document.querySelectorAll('.tab');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs
+                tabs.forEach(t => t.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Hide all tab content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                // Show the selected tab content
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+        
+        // Registration modal
+        const registrationModal = document.getElementById('registration-modal');
+        const openRegistrationBtn = document.getElementById('open-registration');
+        const closeRegistrationBtn = document.getElementById('close-registration');
+        const registrationForm = document.getElementById('registration-form');
+        
+        openRegistrationBtn.addEventListener('click', () => {
+            registrationModal.style.display = 'flex';
+        });
+        
+        closeRegistrationBtn.addEventListener('click', () => {
+            registrationModal.style.display = 'none';
+        });
+        
+        window.addEventListener('click', (e) => {
+            if (e.target === registrationModal) {
+                registrationModal.style.display = 'none';
+            }
+        });
+        
+        // Form submission
+        registrationForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Show success message
+            alert('Registration successful! Thank you for registering for BioAura\'25.');
+            
+            // Close modal
+            registrationModal.style.display = 'none';
+            
+            // Reset form
+            registrationForm.reset();
+        });
+        
+        // Chatbot functionality
+        const chatbotToggle = document.getElementById('chatbot-toggle');
+        const chatbot = document.getElementById('chatbot');
+        const sendMessageBtn = document.getElementById('send-message');
+        const userInput = document.getElementById('user-input');
+        const chatbotMessages = document.getElementById('chatbot-messages');
+        
+        chatbotToggle.addEventListener('click', () => {
+            chatbot.style.display = chatbot.style.display === 'flex' ? 'none' : 'flex';
+        });
+        
+        function addMessage(message, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.classList.add(isUser ? 'user-message' : 'bot-message');
+            messageDiv.textContent = message;
+            chatbotMessages.appendChild(messageDiv);
+            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+        }
+        
+        sendMessageBtn.addEventListener('click', () => {
+            const message = userInput.value.trim();
+            if (message) {
+                addMessage(message, true);
+                userInput.value = '';
+                
+                // Simulate bot response
+                setTimeout(() => {
+                    let response;
+                    if (message.toLowerCase().includes('hello') || message.toLowerCase().includes('hi')) {
+                        response = "Hello! How can I help you with BioAura'25?";
+                    } else if (message.toLowerCase().includes('event') || message.toLowerCase().includes('events')) {
+                        response = "We have technical events like Xenomedica, Medniche, Medmystery and non-technical events like Crafina, Aura Connect, Mind Blasters, and a Surprise Event!";
+                    } else if (message.toLowerCase().includes('register') || message.toLowerCase().includes('registration')) {
+                        response = "You can register by clicking the 'Register Now' button on the website. It will open a form where you can provide your details and select events.";
+                    } else if (message.toLowerCase().includes('date') || message.toLowerCase().includes('when')) {
+                        response = "BioAura'25 will be held on October 10, 2025 at Kings Engineering College.";
+                    } else if (message.toLowerCase().includes('location') || message.toLowerCase().includes('where')) {
+                        response = "The symposium will be held at Kings Engineering College, Biomedical Department. You can find the location on the map section of the website.";
+                    } else {
+                        response = "I'm connected to DeepSeek AI. For more detailed information about BioAura'25, please visit our website or contact us at bioaura25@gmail.com";
+                    }
+                    
+                    addMessage(response);
+                }, 1000);
+            }
+        });
+        
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessageBtn.click();
+            }
+        });
+        
+        // Initialize map
+        function initMap() {
+            // Coordinates for Kings Engineering College, Sriperumbudur
+            const collegeCoords = [12.901729, 80.073257];
+            
+            const map = L.map('map').setView(collegeCoords, 15);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            L.marker(collegeCoords).addTo(map)
+                .bindPopup('Kings Engineering College<br>Biomedical Department<br>Sriperumbudur')
+                .openPopup();
+        }
+        
+        // Initialize map when page loads
+        window.onload = initMap;
+    </script>
+</body>
+</html>
